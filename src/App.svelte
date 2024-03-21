@@ -1,5 +1,6 @@
 <script lang="ts">
   import confetti from "canvas-confetti";
+  import { generateSvg } from "./template";
 
   let generating = false;
   let image: string | undefined;
@@ -10,14 +11,41 @@
 
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    const name = formData.get("name")!;
-    const twitter = formData.get("twitter")!;
-    const github = formData.get("github")!;
+    const name = formData.get("name")!.toString();
+    const twitter = "@" + formData.get("twitter")!.toString();
+    const github = "@" + formData.get("github")!.toString();
 
-    console.table({ name, twitter, github });
+    const card = { name, twitter, github };
+
+    generating = true;
+    const svg = generateSvg(card);
+
+    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const img = new Image();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    img.addEventListener("load", () => {
+      try {
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        ctx.drawImage(img, 0, 0);
+
+        image = canvas.toDataURL();
+
+        URL.revokeObjectURL(url);
+        generating = false;
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    img.src = url;
 
     form.reset();
-
     confetti();
   }
 
